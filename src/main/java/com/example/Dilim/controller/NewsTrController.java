@@ -1,8 +1,7 @@
 package com.example.Dilim.controller;
 
 import com.example.Dilim.dto.NewsTrDto;
-import com.example.Dilim.repository.NewsTrRepository;
-import com.example.Dilim.service.NewsTrService;
+import com.example.Dilim.service.newsTrService.NewsTrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

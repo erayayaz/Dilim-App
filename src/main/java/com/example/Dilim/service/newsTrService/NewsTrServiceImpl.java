@@ -1,13 +1,15 @@
-package com.example.Dilim.service;
+package com.example.Dilim.service.newsTrService;
 
 import com.example.Dilim.dto.NewsTrDto;
 import com.example.Dilim.entity.NewsTr;
+import com.example.Dilim.exception.NewsNotFoundException;
 import com.example.Dilim.repository.NewsTrRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -18,13 +20,8 @@ public class NewsTrServiceImpl implements NewsTrService{
     @Override
     public NewsTrDto save(NewsTrDto newsTrDto) {
 
-        NewsTr newsTr = NewsTr.builder()
-                .id(newsTrDto.getId())
-                .title(newsTrDto.getTitle())
-                .source(newsTrDto.getSource())
-                .description(newsTrDto.getDescription())
-                .createdDate(newsTrDto.getCreatedDate())
-                .build();
+        NewsTr newsTr = new NewsTr(newsTrDto.getId(), newsTrDto.getTitle(), newsTrDto.getSource(),
+                newsTrDto.getDescription(), getDate());
 
         final NewsTr newsTrDb = newsTrRepository.save(newsTr);
         newsTrDto.setId(newsTrDb.getId());
@@ -35,6 +32,8 @@ public class NewsTrServiceImpl implements NewsTrService{
     @Override
     public void delete(Long id) {
 
+        Optional<NewsTr> newsTr = Optional.ofNullable(findCustomerById(id));
+        newsTrRepository.deleteById(Objects.requireNonNull(newsTr.get().getId()));
     }
 
     @Override
@@ -55,5 +54,18 @@ public class NewsTrServiceImpl implements NewsTrService{
         });
 
         return newsTrDtos;
+    }
+
+    private String getDate () {
+        Date date = Calendar.getInstance().getTime();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        return dateFormat.format(date);
+    }
+
+    private NewsTr findCustomerById(Long id) {
+        return newsTrRepository.findById(id)
+                .orElseThrow(
+                    () -> new NewsNotFoundException("NewsTr could not find by id: " + id));
+
     }
 }

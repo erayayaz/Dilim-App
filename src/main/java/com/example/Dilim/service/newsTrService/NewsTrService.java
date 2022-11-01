@@ -1,4 +1,4 @@
-package com.example.Dilim.service;
+package com.example.Dilim.service.newsTrService;
 
 import com.example.Dilim.dto.NewsTrDto;
 
