@@ -30,10 +30,22 @@ public class NewsTrServiceImpl implements NewsTrService{
     }
 
     @Override
-    public void delete(Long id) {
+    public boolean delete(Long id) {
 
         Optional<NewsTr> newsTr = Optional.ofNullable(findCustomerById(id));
         newsTrRepository.deleteById(Objects.requireNonNull(newsTr.get().getId()));
+
+        return true;
+    }
+
+    @Override
+    public NewsTrDto update(NewsTrDto newsTrDto) {
+
+        Optional<NewsTr> newsTr = Optional.ofNullable(findCustomerById(newsTrDto.getId()));
+        newsTrRepository.save(NewsTr.Companion.fromDto(newsTrDto, newsTr.get()));
+
+        newsTrDto.setId(newsTr.get().getId());
+        return newsTrDto;
     }
 
     @Override

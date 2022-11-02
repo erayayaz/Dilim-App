@@ -1,15 +1,19 @@
 package com.example.Dilim.entity
 
+import com.example.Dilim.dto.NewsTrDto
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor
 import org.hibernate.annotations.GenericGenerator
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import javax.persistence.*
 
 @Entity
 @Table(name = "news_tr")
 @AllArgsConstructor
 @NoArgsConstructor
-data class NewsTr(
+internal data class NewsTr(
         @Id
         @GeneratedValue(generator = "UUID")
         @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
@@ -20,5 +24,21 @@ data class NewsTr(
         val description: String?,
         val createdDate: String
 ) {
+
+        companion object {
+                fun fromDto(dto: NewsTrDto, newsTr: NewsTr) = NewsTr (
+                        id = dto.id!!,
+                        title = dto.title ?: newsTr.title,
+                        source = dto.source ?: newsTr.source,
+                        description = dto.description ?: newsTr.source,
+                        createdDate = dto.createdDate ?: newsTr.getDate()
+                )
+        }
+
+        fun getDate() : String {
+                val current = LocalDateTime.now()
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+               return current.format(formatter)
+        }
 
 }
