@@ -1,0 +1,26 @@
+version: '3.1'
+
+services:
+  app:
+    container_name: dilim
+    image: dilim
+    build: ./
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgresdb
+    networks:
+      - postgres_network
+  postgresdb:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: fresh
+      POSTGRES_DB: dilim
+    networks:
+      - postgres_network
+networks:
+  postgres_network:
+    driver: bridge
