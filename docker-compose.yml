@@ -4,6 +4,7 @@ services:
   dilim:
     build: .
     container_name: dilim
+    platform: linux/amd64
     ports:
       - "8080:8080"
     depends_on:
