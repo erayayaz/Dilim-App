@@ -2,13 +2,13 @@ package com.example.Dilim.service.newsService;
 
 import com.example.Dilim.dto.CreateNewsRequest;
 import com.example.Dilim.dto.GetNewsDto;
+import com.example.Dilim.dto.GetNewsRequest;
 import com.example.Dilim.dto.NewsDto;
 import com.example.Dilim.dto.converter.NewsDtoConverter;
 import com.example.Dilim.enums.Language;
-import com.example.Dilim.model.News;
 import com.example.Dilim.exception.NewsNotFoundException;
-import com.example.Dilim.exception.NewsTrWithSameTitleException;
-import com.example.Dilim.exception.NoContentException;
+import com.example.Dilim.exception.NewsWithSameTitleException;
+import com.example.Dilim.model.News;
 import com.example.Dilim.repository.NewsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,18 +23,18 @@ import java.util.logging.Logger;
 @RequiredArgsConstructor
 public class NewsServiceImpl implements NewsService {
 
+    private static final Logger LOGGER = Logger.getLogger(String.valueOf(NewsServiceImpl.class));
     private final NewsRepository newsRepository;
     private final NewsDtoConverter newsDtoConverter;
-    private static final Logger LOGGER = Logger.getLogger(String.valueOf(NewsServiceImpl.class));
 
     @Override
-    @Transactional(rollbackOn = Exception.class)
-    public NewsDto createNews(CreateNewsRequest request) {
+    @Transactional
+    public NewsDto createNews(final CreateNewsRequest request) {
 
         News news = newsRepository.findByTitleTrAndTitleEng(request.getTitleTr(), request.getTitleEng());
         if (news != null) {
             LOGGER.info("Duplicated title error occurred");
-            throw new NewsTrWithSameTitleException("Duplicated title error occurred");
+            throw new NewsWithSameTitleException("Duplicated title error occurred");
         }
 
         News insertedNews = new News(0, request.getTitleTr(), request.getTitleEng(), request.getSource(), request.getDescriptionTr(),
@@ -43,16 +43,15 @@ public class NewsServiceImpl implements NewsService {
     }
 
     @Override
-    @Transactional(rollbackOn = Exception.class)
-    public void delete(int id) {
-
-        Optional<News> news = Optional.ofNullable(findCustomerById(id));
-        newsRepository.deleteById(Objects.requireNonNull(news.get().getId()));
+    @Transactional
+    public void deleteNews(final int id) {
+        News news = findCustomerById(id);
+        newsRepository.deleteById(Objects.requireNonNull(news.getId()));
     }
 
     @Override
-    @Transactional(rollbackOn = Exception.class)
-    public NewsDto update(int id, NewsDto newsTrDto) {
+    @Transactional
+    public NewsDto updateNews(final int id, final NewsDto newsTrDto) {
 
         News news = findCustomerById(id);
         News updatedNews = new News(
@@ -66,23 +65,48 @@ public class NewsServiceImpl implements NewsService {
                 getDate()
         );
 
-        return newsDtoConverter.convert(updatedNews);
+        return newsDtoConverter.convert(newsRepository.save(updatedNews));
     }
 
     @Override
-    public List<GetNewsDto> getAll(String language) {
+    public List<GetNewsDto> getAll(final String language) {
         List<News> newsList = newsRepository.findAll();
 
-        if (newsList.size() == 0 ) {
-            LOGGER.info("There is no news in news tr.");
-            throw new NoContentException("There is no news in news tr.");
+        if (newsList.size() == 0) {
+            return new ArrayList<>();
         }
 
+        return getNewsDtos(newsList, language);
+    }
+
+    @Override
+    public List<GetNewsDto> getNewsByDate(final GetNewsRequest request) {
+        List<News> newsList = newsRepository.findByDate(request.getRequestedDate());
+
+        if (newsList.size() == 0) {
+            return new ArrayList<>();
+        }
+
+        return getNewsDtos(newsList, request.getLanguage().toLowerCase());
+    }
+
+    private String getDate() {
+        Date date = Calendar.getInstance().getTime();
+        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        return dateFormat.format(date);
+    }
+
+    private News findCustomerById(int id) {
+        return newsRepository.findById(id)
+                .orElseThrow(() -> new NewsNotFoundException("NewsTr could not find by id: " + id));
+    }
+
+    private List<GetNewsDto> getNewsDtos(List<News> newsList, String language) {
         List<GetNewsDto> newsDtos = new ArrayList<>();
 
         if (language.equals(Language.TR.name().toLowerCase())) {
             newsList.forEach(news -> {
-                GetNewsDto newsDto =  new GetNewsDto(
+                GetNewsDto newsDto = new GetNewsDto(
                         news.getId(),
                         news.getTitleTr(),
                         news.getSource(),
@@ -94,7 +118,7 @@ public class NewsServiceImpl implements NewsService {
             });
         } else if (language.equals(Language.EN.name().toLowerCase())) {
             newsList.forEach(news -> {
-                GetNewsDto newsDto =  new GetNewsDto(
+                GetNewsDto newsDto = new GetNewsDto(
                         news.getId(),
                         news.getTitleEng(),
                         news.getSource(),
@@ -107,16 +131,5 @@ public class NewsServiceImpl implements NewsService {
         }
 
         return newsDtos;
-    }
-
-    private String getDate () {
-        Date date = Calendar.getInstance().getTime();
-        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-        return dateFormat.format(date);
-    }
-
-    private News findCustomerById(int id) {
-        return newsRepository.findById(id)
-                .orElseThrow(() -> new NewsNotFoundException("NewsTr could not find by id: " + id));
     }
 }
